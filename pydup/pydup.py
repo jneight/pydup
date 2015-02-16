@@ -11,6 +11,7 @@ from __future__ import division
 import re
 import hashlib
 import struct
+import math
 
 from collections import defaultdict
 
@@ -66,7 +67,7 @@ def _generate_hash(seed, token):
         :returns: Integer of the partial digest
     """
     return struct.unpack(
-        'i', hashlib.md5(u'{0}{1}'.format(seed, token).encode('utf-8')).digest()[0:4])[0]
+        'i', hashlib.md5(u'{0}${1}'.format(seed, token).encode('utf-8')).digest()[0:4])[0]
 
 
 def minHash(tokens, N):
@@ -151,7 +152,7 @@ class LSHTable(object):
         self._chunk_size = hash_iter // self._radius
 
         # initialize an empty table
-        self._table = [defaultdict(list) for i in range(self._radius)]
+        self._table = [defaultdict(list) for i in range(math.ceil(self._hash_iter / self._chunk_size))]
 
     def bitvector_from_tokens(self, tokens):
         hashes = minHash(tokens, N=self._hash_iter)  # minimal hashes generated in each iteration
