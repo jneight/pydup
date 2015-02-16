@@ -137,7 +137,7 @@ class LSHTable(object):
         self._hash_size = hash_size
         self._chunk_size = chunk_size
 
-        self._table = [{} for i in range(self._chunk_size)]
+        self._table = [{} for i in range(pow(2, self._chunk_size))]
 
     def bitvector_from_tokens(self, tokens):
         hashes = minHash(tokens, N=self._hash_size)
