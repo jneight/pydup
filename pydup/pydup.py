@@ -6,11 +6,16 @@ https://engineering.eventbrite.com/multi-index-locality-sensitive-hashing-for-fu
 
 """
 
+from __future__ import division
+
 import re
 import hashlib
 import struct
 
+from collections import defaultdict
+
 repeated_char_pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
+
 
 def tokenize_sentence(sentence):
     for word in sentence.split(' '):
@@ -61,7 +66,7 @@ def _generate_hash(seed, token):
         :returns: Integer of the partial digest
     """
     return struct.unpack(
-        'i', hashlib.md5('{0}${1}'.format(seed, token).encode('utf-8')).digest()[0:4])[0]
+        'i', hashlib.md5(u'{0}{1}'.format(seed, token).encode('utf-8')).digest()[0:4])[0]
 
 
 def minHash(tokens, N):
@@ -102,12 +107,17 @@ def bitsampling(hashes, N):
     return bits
 
 
-def split_chunks(bits, N, chunk_size):
-    """Split the bits in groups of chunk bits"""
-    bit_vector = bin(bits << (N % chunk_size))[2:]  # pad to left with zero to match the chunk multiple bits
-    chunks = []
+def split_chunks(bits, chunk_size):
+    """Split the bitvector in groups of bits
 
-    for i in range(0, N, chunk_size):
+        :param bits: bitvector
+        :param chunk_size: number of bits per each chunk
+    """
+    # pad to left with zero to match the chunk multiple bits
+    size = len(bin(bits)[2:])
+    bit_vector = bin(bits << (size % chunk_size))[2:]
+    chunks = []
+    for i in range(0, size, chunk_size):
         chunks.append(int(bit_vector[i:i+chunk_size], 2))
     return chunks
 
@@ -124,35 +134,37 @@ def generate_close_chunks(chunk):
         # apply a XOR operations with a zero-vector with just one bit as 1, the bit is
         # moved each iteration
         close_chunks.append(chunk ^ (1 << i))
+    close_chunks.append(chunk)
     return close_chunks
 
 
 class LSHTable(object):
-    def __init__(self, hash_size, chunk_size):
+    def __init__(self, hash_iter=32, radius=4):
         """
-            :param hash_size: the number of different hashes to be generated per token and
-                also the number of bits in the bitsampled string
-            :param chunk_size: size for the chunk,
-        """
-        self._hash_size = hash_size
-        self._chunk_size = chunk_size
+            :param hash_iter: the number of different hashes to be generated per token (chosen empirically),
+                also represents the bitvector length
+            :param radius: number of unequal bits to match two bitvectors
 
-        self._table = [{} for i in range(self._chunk_size)]
+        """
+        self._hash_iter = hash_iter
+        self._radius = radius
+        self._chunk_size = hash_iter // self._radius
+
+        # initialize an empty table
+        self._table = [defaultdict(list) for i in range(self._radius)]
 
     def bitvector_from_tokens(self, tokens):
-        hashes = minHash(tokens, N=self._hash_size)
-        return bitsampling(hashes, N=self._hash_size)
+        hashes = minHash(tokens, N=self._hash_iter)  # minimal hashes generated in each iteration
+        return bitsampling(hashes, N=self._hash_iter)  # take the less significant bit of each hash
 
     def add(self, bitvector):
-        chunks = split_chunks(bitvector, self._hash_size, self._chunk_size)
+        chunks = split_chunks(bitvector, self._chunk_size)
         for i, c in enumerate(chunks):
-            if not i in self._table:
-                self._table[i] = {}
             if not chunks[i] in self._table[i]:
-                self._table[i][chunks[i]] = [bitvector]
+                self._table[i][chunks[i]].append(bitvector)
 
     def lookup(self, bitvector):
-        chunks = split_chunks(bitvector, self._hash_size, self._chunk_size)
+        chunks = split_chunks(bitvector, self._chunk_size)
         matches = []
         for i, chunk in enumerate(chunks):
             close_chunks = generate_close_chunks(chunk)
