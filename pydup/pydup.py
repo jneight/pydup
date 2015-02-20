@@ -89,7 +89,7 @@ def bitsimilarity(bitsA, bitsB, N):
        O(M^2)
 
     """
-    distance = _hamming_distance(bitsA, bitsB)
+    distance = _hamming_distance(bitsA, bitsB, N)
     similarity = 1 - distance / N
     return similarity
 
@@ -152,7 +152,7 @@ class LSHTable(object):
         self._chunk_size = hash_iter // self._radius
 
         # initialize an empty table
-        self._table = [defaultdict(list) for i in range(math.ceil(self._hash_iter / self._chunk_size))]
+        self._table = [defaultdict(list) for i in range(int(math.ceil(self._hash_iter / self._chunk_size)))]
 
     def bitvector_from_tokens(self, tokens):
         hashes = minHash(tokens, N=self._hash_iter)  # minimal hashes generated in each iteration
