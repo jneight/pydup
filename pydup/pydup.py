@@ -161,8 +161,7 @@ class LSHTable(object):
     def add(self, bitvector):
         chunks = split_chunks(bitvector, self._chunk_size)
         for i, c in enumerate(chunks):
-            if not chunks[i] in self._table[i]:
-                self._table[i][chunks[i]].append(bitvector)
+            self.table[i][chunks[i]].append(bitvector)
 
     def lookup(self, bitvector):
         chunks = split_chunks(bitvector, self._chunk_size)
