@@ -44,7 +44,6 @@ def _minHash_similarity(hashesA, hashesB, N):
 
         O(N M^2)
     """
-    count = 0
     count = sum(1 for i in range(N) if hashesA[i] == hashesB[i])
 
     return count/N
@@ -52,9 +51,8 @@ def _minHash_similarity(hashesA, hashesB, N):
 
 def _hamming_distance(bitsA, bitsB, N):
     """Hamming distance returns the number of equals bits"""
-    X = bin( bitsA ^ bitsB)[2:]
+    X = '{:b}'.format(bitsA ^ bitsB)
     X = X.zfill(N)  # pad with leading zero to match the N bits
-    count = 0
 
     return sum(1 for i in range(N) if int(X[i]) == 1)
 
@@ -104,7 +102,6 @@ def bitsampling(hashes, N):
 
     for i in range(N):
         bits = (bits << 1) | (hashes[i] & 1)
-
     return bits
 
 
@@ -115,10 +112,10 @@ def split_chunks(bits, chunk_size):
         :param chunk_size: number of bits per each chunk
     """
     # pad to left with zero to match the chunk multiple bits
-    size = len(bin(bits)[2:])
-    bit_vector = bin(bits << (size % chunk_size))[2:]
+    #bit_vector = '{{:0>{0}}}'.format(chunk_size).format('{:b}'.format(bits))
+    bit_vector = '{:b}'.format(bits).zfill(chunk_size)
     chunks = []
-    for i in range(0, size, chunk_size):
+    for i in range(0, len(bit_vector), chunk_size):
         chunks.append(int(bit_vector[i:i+chunk_size], 2))
     return chunks
 
@@ -129,7 +126,7 @@ def generate_close_chunks(chunk):
         returns list of chunks
 
     """
-    size = len(bin(chunk)[2:])
+    size = len('{:b}'.format(chunk))
     close_chunks = []
     for i in range(size):
         # apply a XOR operations with a zero-vector with just one bit as 1, the bit is
@@ -172,3 +169,4 @@ class LSHTable(object):
                 if close in self._table[i]:
                     matches.extend(self._table[i][close])
         return matches
+

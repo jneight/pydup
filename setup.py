@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
         name='pydup',
-        version='0.10',
+        version='0.11',
         install_requires=[],
         url='https://github.com/jneight/pydup',
         description='Simple implementation of LSH Algorithm',
